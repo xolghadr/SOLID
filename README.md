@@ -199,115 +199,117 @@ Example:
 
 ```mermaid
 classDiagram
-    class IWorker {
+    class PaymentMethod {
         <<interface>>
-        - Work()
     }
-    class IEatable {
+
+    class IChargeable {
         <<interface>>
-        - Eat()
+        +ChargeCard()
     }
-    class ISleepable {
+
+    class IFundTransferable {
         <<interface>>
-        - Sleep()
+        +TransferFunds()
     }
-    class Worker {
-        - Work()
-        - Eat()
+
+    class IVerifiable {
+        <<interface>>
+        +VerifyAccount()
     }
-    class SuperWorker {
-        - Work()
-        - Eat()
-        - Sleep()
+
+    class CreditCard {
+        -cardNumber: string
+        -expirationDate: Date
+        +ChargeCard()
+        +VerifyAccount()
     }
-    Worker ..> IWorker
-    Worker ..> IEatable
-    SuperWorker ..> IWorker
-    SuperWorker ..> IEatable
-    SuperWorker ..> ISleepable
+
+    class PayPal {
+        -email: string
+        -password: string
+        +TransferFunds()
+    }
+
+    class BankTransfer {
+        -accountNumber: string
+        -routingNumber: string
+        +TransferFunds()
+        +VerifyAccount()
+    }
+
+    IChargeable <|.. CreditCard
+    IVerifiable <|.. CreditCard
+
+    IVerifiable <|.. BankTransfer
+    IFundTransferable <|.. BankTransfer
+
+    IFundTransferable <|.. PayPal
+
+    PaymentMethod <|-- IChargeable
+    PaymentMethod <|-- IFundTransferable
+    PaymentMethod <|-- IVerifiable
 ```
 
 ```csharp
 // Bad
-public interface IWorker
+public interface IPaymentMethod
 {
-    void Work();
-    void Eat();
-}
-
-public class Worker : IWorker
-{
-    public void Work()
-    {
-        // ...
-    }
-
-    public void Eat()
-    {
-        // ...
-    }
-}
-
-public class SuperWorker : IWorker
-{
-    public void Work()
-    {
-        // ...
-    }
-
-    public void Eat()
-    {
-        // ...
-    }
-
-    public void Sleep()
-    {
-        // ...
-    }
+    void ChargeCard();
+    void TransferFunds();
+    void VerifyAccount();
+    //...
 }
 
 // Good
-public interface IWorker
+public interface IChargeable
 {
-    void Work();
+    void ChargeCard();
 }
 
-public interface IEatable
+public interface IFundTransferable
 {
-    void Eat();
+    void TransferFunds();
 }
 
-public class Worker : IWorker, IEatable
+public interface IVerifiable
 {
-    public void Work()
-    {
-        // ...
-    }
-
-    public void Eat()
-    {
-        // ...
-    }
+    void VerifyAccount();
 }
 
-public class SuperWorker : IWorker, IEatable, ISleepable
+// Now, each payment method implements only the interfaces it needs
+public class CreditCard : IChargeable, IVerifiable
 {
-    public void Work()
+    public void ChargeCard() { /* implementation */ }
+    public void VerifyAccount() { /* implementation */ }
+}
+
+public class PayPal : IFundTransferable
+{
+    public void TransferFunds() { /* implementation */ }
+}
+
+public class BankTransfer : IFundTransferable, IVerifiable
+{
+    public void TransferFunds() { /* implementation */ }
+    public void VerifyAccount() { /* implementation */ }
+}
+
+// Client code can now depend on the specific interfaces it needs
+public class PaymentProcessor
+{
+    public void ProcessPayment(IChargeable paymentMethod)
     {
-        // ...
+        paymentMethod.ChargeCard();
     }
 
-    public void Eat()
+    public void ProcessPayment(IFundTransferable paymentMethod)
     {
-        // ...
-    }
-
-    public void Sleep()
-    {
-        // ...
+        paymentMethod.TransferFunds();
     }
 }
 ```
+
 ### Dependency Inversion Principle (DIP)
 High-level modules should not depend on low-level modules. Both should depend on abstractions. This means that you should depend on abstractions instead of concrete classes.
 
