@@ -1,3 +1,4 @@
+
 # SOLID Principles
 
 SOLID is an acronym for five design principles in object-oriented programming and design. These principles help to create software that is easy to maintain, understand, and extend.
@@ -374,6 +375,200 @@ public class OrderProcessor
     }
 }
 ```
+I like to mention that there are few methods other than dependency injection to fulfill DIP. I will provide some of them here:
+
+### 1. Service Locator
+
+A Service Locator is a centralized registry that provides access to dependencies. Instead of injecting dependencies through constructors or setters, components can request them from the Service Locator. This approach can be seen as a compromise between DI and manual instantiation.
+
+**Example:**
+
+```csharp
+public class ServiceLocator
+{
+    private readonly Dictionary<Type, object> _services = new Dictionary<Type, object>();
+
+    public void Register<T>(T service) where T : class
+    {
+        _services.Add(typeof(T), service);
+    }
+
+    public T Get<T>() where T : class
+    {
+        return (T)_services[typeof(T)];
+    }
+}
+
+public class MyComponent
+{
+    public MyComponent()
+    {
+        var logger = ServiceLocator.Get<ILogger>();
+        // use logger
+    }
+}
+
+public interface ILogger
+{
+    void Log(string message);
+}
+
+public class ConsoleLogger : ILogger
+{
+    public void Log(string message)
+    {
+        Console.WriteLine(message);
+    }
+}
+
+// Usage:
+ServiceLocator locator = new ServiceLocator();
+locator.Register(new ConsoleLogger());
+
+MyComponent component = new MyComponent();
+```
+### 2. Factory Methods
+
+Factory Methods are a creational pattern that allows you to encapsulate object creation. By using factory methods, you can decouple components from specific implementations and provide a way to swap out dependencies.
+
+**Example:**
+```csharp
+public class LoggerFactory
+{
+    public static ILogger CreateLogger()
+    {
+        return new ConsoleLogger(); // or FileLogger, etc.
+    }
+}
+
+public class MyComponent
+{
+    public MyComponent()
+    {
+        var logger = LoggerFactory.CreateLogger();
+        // use logger
+    }
+}
+
+public interface ILogger
+{
+    void Log(string message);
+}
+
+public class ConsoleLogger : ILogger
+{
+    public void Log(string message)
+    {
+        Console.WriteLine(message);
+    }
+}
+
+public class FileLogger : ILogger
+{
+    public void Log(string message)
+    {
+        // log to file
+    }
+}
+```
+### 3. Plugin Architecture
+
+A Plugin Architecture allows you to decouple components from specific implementations by using a common interface. Plugins can be loaded dynamically, providing a way to swap out dependencies.
+
+**Example:**
+```csharp
+public interface ILogger
+{
+    void Log(string message);
+}
+
+public class ConsoleLogger : ILogger
+{
+    public void Log(string message)
+    {
+        Console.WriteLine(message);
+    }
+}
+
+public class FileLogger : ILogger
+{
+    public void Log(string message)
+    {
+        // log to file
+    }
+}
+
+public class PluginLoader
+{
+    public static ILogger LoadLogger(string pluginName)
+    {
+        if (pluginName == "console")
+            return new ConsoleLogger();
+        else if (pluginName == "file")
+            return new FileLogger();
+        else
+            throw new ArgumentException("Invalid plugin name", nameof(pluginName));
+    }
+}
+
+public class MyComponent
+{
+    public MyComponent(ILogger logger)
+    {
+        _logger = PluginLoader.LoadLogger("console");
+    }
+
+    private readonly ILogger _logger;
+
+    public void DoSomething()
+    {
+        _logger.Log("Something happened");
+    }
+}
+
+// Usage:
+MyComponent component = new MyComponent();
+```
+### 4. Higher-Order Functions
+
+Higher-Order Functions (HOFs) are functions that take other functions as arguments or return functions as output. By using HOFs, you can decouple components from specific implementations and provide a way to swap out dependencies.
+
+**Example:**
+```csharp
+public delegate void LoggerDelegate(string message);
+
+public class MyComponent
+{
+    public MyComponent(LoggerDelegate logger)
+    {
+        _logger = logger;
+    }
+
+    private readonly LoggerDelegate _logger;
+
+    public void DoSomething()
+    {
+        _logger("Something happened");
+    }
+}
+
+public class LoggerFactory
+{
+    public static LoggerDelegate CreateLogger(LoggerDelegate logger)
+    {
+        return logger;
+    }
+}
+
+// Usage:
+LoggerDelegate consoleLogger = (message) => Console.WriteLine(message);
+LoggerDelegate fileLogger = (message) => { /* log to file */ };
+
+MyComponent component1 = new MyComponent(LoggerFactory.CreateLogger(consoleLogger));
+MyComponent component2 = new MyComponent(LoggerFactory.CreateLogger(fileLogger));
+```
+Note that in the Higher-Order Functions example, I used a delegate to represent the logger function. This is a simple way to demonstrate the concept, but in a real-world scenario, you might want to use a more robust approach, such as using a functional interface or a strategy pattern.
+
 ### Conclusion
 
 SOLID principles are a set of guidelines for designing software that is easy to maintain, understand, and extend. By following these principles, you can create software that is more flexible, reusable, and testable.
