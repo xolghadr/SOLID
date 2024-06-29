@@ -199,7 +199,7 @@ Example:
 
 ```mermaid
 classDiagram
-    class PaymentMethod {
+    class IPaymentMethod {
         <<interface>>
     }
 
@@ -246,9 +246,9 @@ classDiagram
 
     IFundTransferable <|.. PayPal
 
-    PaymentMethod <|-- IChargeable
-    PaymentMethod <|-- IFundTransferable
-    PaymentMethod <|-- IVerifiable
+    IPaymentMethod <|-- IChargeable
+    IPaymentMethod <|-- IFundTransferable
+    IPaymentMethod <|-- IVerifiable
 ```
 
 ```csharp
